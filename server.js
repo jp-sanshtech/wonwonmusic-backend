@@ -8,7 +8,7 @@ const session = require('express-session');
 
 const app = express();
 
-// ✅ CORS - Always apply before any other middleware
+// ✅ CORS Configuration
 const allowedOrigins = [
   "https://wonwonleywontalent.com",
   "https://www.wonwonleywontalent.com",
@@ -31,20 +31,20 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// ✅ Built-in JSON parsing (replaces bodyParser)
 app.use(express.json());
 
-// ✅ Sessions
-app.use(
-  session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false } // If using HTTPS in production, set this to true
-  })
-);
+// ✅ Session Configuration
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true,          // ✅ for HTTPS (required on Render)
+    sameSite: 'none'       // ✅ to allow cross-origin cookies from Vercel
+  }
+}));
 
-// ✅ MongoDB connection
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -57,7 +57,6 @@ const adminSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
 });
-
 const Admin = mongoose.model("Admin", adminSchema);
 
 const artistSchema = new mongoose.Schema({
@@ -65,10 +64,9 @@ const artistSchema = new mongoose.Schema({
   instagramUrl: { type: String },
   order: { type: Number },
 });
-
 const Artist = mongoose.model("Artist", artistSchema);
 
-// ✅ Middleware to protect admin routes
+// ✅ Authentication Middleware
 function authenticate(req, res, next) {
   if (!req.session.admin) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -76,7 +74,7 @@ function authenticate(req, res, next) {
   next();
 }
 
-// ✅ Routes
+// ✅ Public Routes
 app.get("/api/artists", async (req, res) => {
   try {
     const artists = await Artist.find().sort({ order: 1 });
@@ -111,6 +109,7 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
+// ✅ Admin Routes
 app.get("/api/admin/artists", authenticate, async (req, res) => {
   try {
     const artists = await Artist.find().sort({ order: 1 });
@@ -154,6 +153,6 @@ app.post("/api/admin/artists/reorder", authenticate, async (req, res) => {
   }
 });
 
-// ✅ Start server
+// ✅ Start the Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
