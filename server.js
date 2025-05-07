@@ -33,16 +33,18 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Session Configuration
-app.use(session({
-  secret: 'your_secret_key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,          // ✅ for HTTPS (required on Render)
-    sameSite: 'none'       // ✅ to allow cross-origin cookies from Vercel
-  }
-}));
+app.use(
+  session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: true,        // ✅ Required for HTTPS (Render)
+      sameSite: 'none'     // ✅ Required for cross-origin cookies (Vercel)
+    }
+  })
+);
+
 
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
