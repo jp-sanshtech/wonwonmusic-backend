@@ -1,31 +1,21 @@
 require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // ✅ for production-ready session storage
 
 const app = express();
 
 // ✅ CORS Configuration
 const allowedOrigins = [
   "https://wonwonleywontalent.com",
-  "https://www.wonwonleywontalent.com",
-  "https://wonwonleywonmusic.com",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:5174",
+  "https://www.wonwonleywontalent.com"
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -33,18 +23,22 @@ app.use(cors({
 
 app.use(express.json());
 
+// ✅ Session with MongoDB store (for Render compatibility)
 app.use(
   session({
     secret: 'your_secret_key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true,        // ✅ Required for HTTPS (Render)
-      sameSite: 'none'     // ✅ Required for cross-origin cookies (Vercel)
-    }
+      secure: true,        // ✅ must be true for HTTPS (Render)
+      sameSite: 'None'     // ✅ allow cross-origin
+    },
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: 'sessions',
+    }),
   })
 );
-
 
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -68,7 +62,7 @@ const artistSchema = new mongoose.Schema({
 });
 const Artist = mongoose.model("Artist", artistSchema);
 
-// ✅ Authentication Middleware
+// ✅ Auth Middleware
 function authenticate(req, res, next) {
   if (!req.session.admin) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -76,7 +70,7 @@ function authenticate(req, res, next) {
   next();
 }
 
-// ✅ Public Routes
+// ✅ Routes
 app.get("/api/artists", async (req, res) => {
   try {
     const artists = await Artist.find().sort({ order: 1 });
@@ -96,6 +90,7 @@ app.post("/api/login", async (req, res) => {
     if (!admin || !(await bcrypt.compare(password, admin.password))) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
+
     req.session.admin = { username };
     res.status(200).json({ message: "Login successful" });
   } catch (error) {
