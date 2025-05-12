@@ -1,4 +1,3 @@
-// ✅ Required Dependencies
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -9,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
-// ✅ CORS
+// ✅ CORS Configuration (debug-safe and supports preflight)
 const allowedOrigins = [
   "https://wonwonleywonmodel.com",
   "https://www.wonwonleywonmodel.com",
@@ -17,15 +16,26 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// ✅ Handle preflight requests globally
+app.options("*", cors());
+
+// ✅ Middleware
 app.use(express.json());
 
-// ✅ MongoDB
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -60,7 +70,7 @@ function authenticate(req, res, next) {
   }
 }
 
-// ✅ Public Routes
+// ✅ Public Route
 app.get("/api/artists", async (req, res) => {
   try {
     const artists = await Artist.find().sort({ order: 1 });
@@ -70,7 +80,7 @@ app.get("/api/artists", async (req, res) => {
   }
 });
 
-// ✅ Login (JWT)
+// ✅ Login
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password)
@@ -92,7 +102,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ Admin Routes (Protected)
+// ✅ Admin Routes
 app.get("/api/admin/artists", authenticate, async (req, res) => {
   const artists = await Artist.find().sort({ order: 1 });
   res.json(artists);
