@@ -1,3 +1,4 @@
+// ✅ Required Dependencies
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -8,10 +9,10 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
-// ✅ CORS Configuration (debug-safe and supports preflight)
+// ✅ CORS Configuration
 const allowedOrigins = [
-  "https://wonwonleywonmodel.com",
-  "https://www.wonwonleywonmodel.com",
+  "https://wonwonleywontalent.com",
+  "https://www.wonwonleywontalent.com",
 ];
 
 app.use(
@@ -29,13 +30,11 @@ app.use(
   })
 );
 
-// ✅ Handle preflight requests globally
+// ✅ Handle preflight OPTIONS requests
 app.options("*", cors());
-
-// ✅ Middleware
 app.use(express.json());
 
-// ✅ MongoDB connection
+// ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -70,7 +69,7 @@ function authenticate(req, res, next) {
   }
 }
 
-// ✅ Public Route
+// ✅ Public Route - List Artists
 app.get("/api/artists", async (req, res) => {
   try {
     const artists = await Artist.find().sort({ order: 1 });
@@ -80,7 +79,7 @@ app.get("/api/artists", async (req, res) => {
   }
 });
 
-// ✅ Login
+// ✅ Admin Login (JWT Auth)
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password)
@@ -102,7 +101,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ Admin Routes
+// ✅ Protected Admin Routes
 app.get("/api/admin/artists", authenticate, async (req, res) => {
   const artists = await Artist.find().sort({ order: 1 });
   res.json(artists);
@@ -137,6 +136,19 @@ app.post("/api/admin/artists/reorder", authenticate, async (req, res) => {
     res.json({ message: "Reorder saved successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to save order" });
+  }
+});
+
+// ✅ Optional: Admin Register (disable after use)
+app.post("/api/register", async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const newAdmin = new Admin({ username, password: hashedPassword });
+    await newAdmin.save();
+    res.status(201).json({ message: "Admin created" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to register admin" });
   }
 });
 
