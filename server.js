@@ -11,6 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
 // ✅ CORS Configuration
 const allowedOrigins = [
+  "https://wonwonmusic-frontend.vercel.app",
   "https://wonwonleywonmusic.com",
   "https://www.wonwonleywonmusic.com",
 ];
