@@ -11,8 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
 // ✅ CORS Configuration
 const allowedOrigins = [
-  "https://wonwonleywontalent.com",
-  "https://www.wonwonleywontalent.com",
+  "https://wonwonleywonmusic.com",
+  "https://www.wonwonleywonmusic.com",
 ];
 
 app.use(
